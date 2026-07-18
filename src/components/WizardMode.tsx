@@ -31,6 +31,7 @@ import { themeStyles } from './ThemeStyles';
 interface WizardModeProps {
   currentTheme: ThemeType;
   setTheme: (theme: ThemeType) => void;
+  userApiKey?: string;
   onBackToLanding: () => void;
   onFinishWizard: (newPrd: PrdDocument) => void;
 }
@@ -116,6 +117,7 @@ const DESIGN_TRENDS_PRESETS: DesignTrend[] = [
 export default function WizardMode({
   currentTheme,
   setTheme,
+  userApiKey,
   onBackToLanding,
   onFinishWizard
 }: WizardModeProps) {
@@ -154,9 +156,14 @@ export default function WizardMode({
     setLoadingStatus('Kecerdasan Buatan (AI) sedang merancang sasis & menganalisis ide Anda...');
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (userApiKey) {
+        headers['x-gemini-api-key'] = userApiKey;
+      }
+
       const response = await fetch('/api/gemini/improve-prompt', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({ title, roughIdea })
       });
 
@@ -222,9 +229,14 @@ export default function WizardMode({
     const activeTrends = selectedTrends.filter(t => t.isSelected);
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (userApiKey) {
+        headers['x-gemini-api-key'] = userApiKey;
+      }
+
       const response = await fetch('/api/gemini/generate-prd', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({
           title,
           description: improvedDescription,

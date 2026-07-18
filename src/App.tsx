@@ -15,7 +15,9 @@ import {
   Lock,
   Award,
   User,
-  ShieldAlert
+  ShieldAlert,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import LandingPage from './components/LandingPage';
@@ -37,6 +39,10 @@ export default function App() {
   const [savedPrds, setSavedPrds] = useState<PrdDocument[]>([]);
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [showLockModal, setShowLockModal] = useState(false);
+  const [userApiKey, setUserApiKey] = useState<string>('');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState<string>('');
+  const [showKey, setShowKey] = useState<boolean>(false);
 
   // On first mount, load documents and participant from localStorage
   useEffect(() => {
@@ -48,6 +54,9 @@ export default function App() {
         console.error('Failed to parse participant data', e);
       }
     }
+
+    const savedKey = localStorage.getItem('prd_generator_user_api_key') || '';
+    setUserApiKey(savedKey);
 
     const rawData = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (rawData) {
@@ -280,6 +289,24 @@ export default function App() {
                 <span>{participant ? 'Hub Portal' : 'Daftar / Portal'}</span>
               </button>
 
+              {/* API Key Settings Button */}
+              <button
+                onClick={() => {
+                  setTempApiKey(userApiKey);
+                  setShowSettingsModal(true);
+                }}
+                className={`py-1.5 px-3 rounded-lg font-bold text-2xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all ${
+                  userApiKey
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-white/[0.04] text-zinc-300 border border-white/[0.08] hover:bg-white/[0.08]'
+                }`}
+                id="nav-settings-btn"
+                title="Atur API Key Gemini Anda sendiri"
+              >
+                <Settings className={`w-3.5 h-3.5 transition-transform duration-500 hover:rotate-90 ${userApiKey ? 'text-emerald-400' : 'text-zinc-400'}`} />
+                <span>{userApiKey ? '🔑 API Kustom' : 'Atur API Key'}</span>
+              </button>
+
               <div className="h-4 w-px bg-zinc-800 hidden sm:block"></div>
 
               <div className="flex items-center gap-4 text-2xs md:text-xs">
@@ -336,6 +363,7 @@ export default function App() {
               <WizardMode
                 currentTheme={theme}
                 setTheme={setTheme}
+                userApiKey={userApiKey}
                 onBackToLanding={handleBackToLanding}
                 onFinishWizard={handleFinishWizard}
               />
@@ -445,6 +473,123 @@ export default function App() {
                     id="btn-modal-go-register"
                   >
                     Daftar Sekarang
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Settings / API Key Modal */}
+      <AnimatePresence>
+        {showSettingsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" id="settings-modal-overlay">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`max-w-md w-full p-6 rounded-3xl border space-y-4 ${
+                theme === 'cyberpunk'
+                  ? 'bg-black border-emerald-500/50 text-emerald-400'
+                  : theme === 'n8n'
+                    ? 'bg-[#101216] border-[#f25f4c]/30 text-white'
+                    : 'bg-zinc-900 border-zinc-800 text-white'
+              }`}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 border-b border-white/[0.05] pb-3">
+                  <Settings className={`w-5 h-5 ${theme === 'cyberpunk' ? 'text-emerald-400' : theme === 'n8n' ? 'text-[#f25f4c]' : 'text-indigo-400'}`} />
+                  <h3 className="text-sm font-bold tracking-tight text-white font-mono uppercase">Pengaturan API Key Gemini</h3>
+                </div>
+
+                <p className="text-3xs sm:text-2xs text-zinc-400 leading-relaxed text-left">
+                  Secara standar, sistem menggunakan <strong>Default System API Key</strong>. Jika Anda menghadapi limit kuota demo, Anda dapat memasukkan API Key Gemini Anda sendiri dari Google AI Studio untuk akses kustom tak terbatas.
+                </p>
+
+                <div className="space-y-2 pt-2 text-left">
+                  <label className="block text-3xs font-mono uppercase tracking-wider text-zinc-400">
+                    Masukkan API Key Gemini Anda:
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      value={tempApiKey}
+                      onChange={(e) => setTempApiKey(e.target.value)}
+                      placeholder="AIzaSy..."
+                      className={`w-full py-2 pl-3 pr-10 rounded-xl text-xs font-mono outline-none bg-black/40 border ${
+                        theme === 'cyberpunk'
+                          ? 'border-emerald-500/30 text-emerald-400 focus:border-emerald-500'
+                          : theme === 'n8n'
+                            ? 'border-white/10 text-white focus:border-[#f25f4c]'
+                            : 'border-white/10 text-white focus:border-indigo-500'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowKey(!showKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-500/5 border border-indigo-500/10 p-3 rounded-2xl space-y-1 text-left">
+                  <span className="text-3xs font-bold text-indigo-400 font-mono uppercase block">Info Penting:</span>
+                  <p className="text-3xs text-zinc-400 leading-relaxed">
+                    API Key Anda akan disimpan secara aman di <strong>local storage browser Anda</strong>, dan hanya dikirimkan ke server proxy aplikasi ini untuk memproses permintaan AI. API Key Anda tidak disimpan di server eksternal kami.
+                  </p>
+                  <a
+                    href="https://aistudio.google.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-3xs font-bold text-indigo-400 hover:underline mt-1"
+                  >
+                    Dapatkan API Key gratis di Google AI Studio &rarr;
+                  </a>
+                </div>
+
+                <div className="w-full pt-4 border-t border-white/[0.05] flex gap-2">
+                  <button
+                    onClick={() => setShowSettingsModal(false)}
+                    className="flex-1 py-2 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] text-zinc-400 hover:text-white font-semibold text-2xs cursor-pointer transition-colors"
+                  >
+                    Batal
+                  </button>
+                  {userApiKey && (
+                    <button
+                      onClick={() => {
+                        setTempApiKey('');
+                        setUserApiKey('');
+                        localStorage.removeItem('prd_generator_user_api_key');
+                        setShowSettingsModal(false);
+                      }}
+                      className="py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-semibold text-2xs cursor-pointer transition-colors"
+                    >
+                      Hapus Key
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      const trimmed = tempApiKey.trim();
+                      setUserApiKey(trimmed);
+                      if (trimmed) {
+                        localStorage.setItem('prd_generator_user_api_key', trimmed);
+                      } else {
+                        localStorage.removeItem('prd_generator_user_api_key');
+                      }
+                      setShowSettingsModal(false);
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-xl font-bold text-2xs cursor-pointer transition-all ${
+                      theme === 'cyberpunk'
+                        ? 'bg-emerald-500 text-black shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                        : theme === 'n8n'
+                          ? 'bg-[#f25f4c] text-white shadow-[0_0_12px_rgba(242,95,76,0.3)]'
+                          : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                    }`}
+                  >
+                    Simpan Key
                   </button>
                 </div>
               </div>

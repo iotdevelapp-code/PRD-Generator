@@ -17,12 +17,13 @@ const PORT = 3000;
 // Initialize GoogleGenAI client lazy-loaded or early, checked against API Key
 const apiKey = process.env.GEMINI_API_KEY;
 
-function getAIClient() {
-  if (!apiKey) {
+function getAIClient(userKey?: string) {
+  const activeKey = userKey || apiKey;
+  if (!activeKey) {
     throw new Error('GEMINI_API_KEY environment variable is required');
   }
   return new GoogleGenAI({
-    apiKey: apiKey,
+    apiKey: activeKey,
     httpOptions: {
       headers: {
         'User-Agent': 'aistudio-build',
@@ -37,11 +38,14 @@ app.use(express.json({ limit: '10mb' }));
 app.post('/api/gemini/improve-prompt', async (req, res) => {
   try {
     const { title, roughIdea } = req.body;
+    const userApiKey = req.headers['x-gemini-api-key'] as string | undefined;
+    const activeApiKey = userApiKey || apiKey;
+
     if (!title) {
       return res.status(400).json({ error: 'Judul aplikasi wajib diisi.' });
     }
 
-    if (!apiKey) {
+    if (!activeApiKey) {
       // Graceful fallback if no API key is set yet
       return res.json({
         improvedDescription: `${roughIdea || 'Aplikasi hebat baru'} yang dikembangkan dengan fokus pada kenyamanan pengguna dan efisiensi sistem.`,
@@ -57,7 +61,7 @@ app.post('/api/gemini/improve-prompt', async (req, res) => {
       });
     }
 
-    const ai = getAIClient();
+    const ai = getAIClient(userApiKey);
     const prompt = `
       Anda adalah seorang Senior Product Manager & Technical Architect handal.
       Seorang pemula ingin merancang aplikasi bernama: "${title}".
@@ -132,6 +136,9 @@ app.post('/api/gemini/improve-prompt', async (req, res) => {
 app.post('/api/gemini/generate-prd', async (req, res) => {
   try {
     const { title, description, targetAudience, architecture, theme, selectedFeatures, selectedTrends, timelineTarget, deployTarget } = req.body;
+    const userApiKey = req.headers['x-gemini-api-key'] as string | undefined;
+    const activeApiKey = userApiKey || apiKey;
+
     if (!title || !description) {
       return res.status(400).json({ error: 'Judul dan Deskripsi produk wajib disertakan.' });
     }
@@ -139,7 +146,7 @@ app.post('/api/gemini/generate-prd', async (req, res) => {
     const activeTimeline = timelineTarget || '1-2 hari';
     const activeDeployTarget = deployTarget || 'vercel';
 
-    if (!apiKey) {
+    if (!activeApiKey) {
       // Graceful fallback if no API key is set yet
       return res.json({
         sitemap: `## Struktur Halaman\n- **/dashboard** - Halaman utama pengguna.\n- **/profil** - Pengaturan profil.\n- **/fitur-utama** - Layanan utama aplikasi.`,
@@ -164,7 +171,7 @@ app.post('/api/gemini/generate-prd', async (req, res) => {
       ? selectedTrends.map((t: any) => `- **${t.name}**: ${t.description} (Platform Referensi: ${t.reference})`).join('\n')
       : '- Gaya desain antarmuka standar modern.';
 
-    const ai = getAIClient();
+    const ai = getAIClient(userApiKey);
     const prompt = `
       Anda adalah seorang Senior Product Manager & Technical Architect kelas dunia.
       Buat dokumen Product Requirement Document (PRD) yang sangat lengkap, kaya informasi, profesional, dan berstandar Silicon Valley dalam Bahasa Indonesia.
