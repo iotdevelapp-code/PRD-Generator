@@ -1,0 +1,6 @@
+{
+  "name": "PRD Generator",
+  "description": "Generator Dokumen Kebutuhan Produk (PRD) interaktif dengan pilihan arsitektur web statis/dinamis dan kustomisasi tema visual secara reaktif.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
